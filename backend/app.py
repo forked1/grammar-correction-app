@@ -1,7 +1,8 @@
-import requests
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # This allows all domains, you can restrict it later if needed
 
 DEEPSEEK_API_URL = "https://deepseek-v31.p.rapidapi.com/"
 RAPIDAPI_KEY = "261984842dmshdb0a4b39e8b25a7p14e388jsn4b1f991a04c9"
@@ -22,11 +23,9 @@ def correct_grammar():
     }
 
     try:
-        # Send POST request to DeepSeek via RapidAPI
         response = requests.post(DEEPSEEK_API_URL, json=payload, headers=headers)
 
         if response.status_code == 200:
-            # Parse and return the corrected grammar from the API response
             data = response.json()
             corrected_text = data.get("choices", [{}])[0].get("message", {}).get("content", "Error correcting text")
             return jsonify({"corrected_text": corrected_text})
@@ -37,4 +36,4 @@ def correct_grammar():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
