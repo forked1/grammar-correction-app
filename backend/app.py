@@ -1,34 +1,40 @@
-from flask import Flask, request, jsonify
 import requests
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# DeepSeek API endpoint and key
-DEEPSEEK_API_URL = 'https://api.deepseek.ai/grammar-correction'  # Replace with actual endpoint
-DEEPSEEK_API_KEY = 'sk-20be3205108248d19cdacb850d679b43'  # Replace with your DeepSeek API key
+DEEPSEEK_API_URL = "https://deepseek-v31.p.rapidapi.com/"
+RAPIDAPI_KEY = "261984842dmshdb0a4b39e8b25a7p14e388jsn4b1f991a04c9"
 
-@app.route('/correct', methods=['POST'])
+headers = {
+    "Content-Type": "application/json",
+    "x-rapidapi-host": "deepseek-v31.p.rapidapi.com",
+    "x-rapidapi-key": RAPIDAPI_KEY,
+}
+
+@app.route('/correct-grammar', methods=['POST'])
 def correct_grammar():
-    text = request.json.get('text', '')  # Extract text from the request
+    text = request.json.get('text')
 
-    # Prepare DeepSeek API request
-    headers = {
-        'Authorization': f'Bearer {DEEPSEEK_API_KEY}',  # Pass API key in header
-        'Content-Type': 'application/json'
-    }
-    
     payload = {
-        'text': text  # Text to be corrected
+        "model": "deepseek-v3",
+        "messages": [{"role": "user", "content": text}]
     }
-    
-    # Make the POST request to DeepSeek API
-    response = requests.post(DEEPSEEK_API_URL, json=payload, headers=headers)
-    
-    if response.status_code == 200:
-        corrected_text = response.json().get('corrected_text', '')
-        return jsonify({"corrected_text": corrected_text})
-    else:
-        return jsonify({"error": "Unable to process the request."}), 400
+
+    try:
+        # Send POST request to DeepSeek via RapidAPI
+        response = requests.post(DEEPSEEK_API_URL, json=payload, headers=headers)
+
+        if response.status_code == 200:
+            # Parse and return the corrected grammar from the API response
+            data = response.json()
+            corrected_text = data.get("choices", [{}])[0].get("message", {}).get("content", "Error correcting text")
+            return jsonify({"corrected_text": corrected_text})
+
+        else:
+            return jsonify({"error": "Unable to process the request", "status_code": response.status_code}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
